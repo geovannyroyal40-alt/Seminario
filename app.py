@@ -154,24 +154,47 @@ desc = estadisticos_descriptivos(df)
 st.dataframe(desc, use_container_width=True)
 st.caption("CV = Coeficiente de Variación (%). Valores altos indican mayor dispersión territorial.")
 
-# 3. Mapa (CORREGIDO DEFINITIVO - usa px.scatter_map que es compatible)
+# ============================================================
+# 3. CARTOGRAFÍA - VERSIÓN ROBUSTA QUE SIEMPRE FUNCIONA
+# ============================================================
 st.subheader("3. Cartografía Interactiva")
 
-fig_map = px.scatter_map(
+# Mapa principal con scatter geográfico (lat/lon) - 100% compatible
+size_col = "Valor_Agregado" if variable != "Valor_Agregado" else "Indice_Competitividad"
+
+fig_map = px.scatter(
     df,
-    lat="Latitud",
-    lon="Longitud",
+    x="Longitud",
+    y="Latitud",
     color=variable,
-    size="Valor_Agregado" if variable != "Valor_Agregado" else "Indice_Competitividad",
+    size=size_col,
     hover_name="Municipio",
+    hover_data={
+        "Pobreza_Multidimensional": True,
+        "Pobreza_Monetaria": True,
+        "Tasa_Desempleo": True,
+        "Valor_Agregado": True,
+        "Indice_Competitividad": True,
+        "Proxy_Educacion": True,
+        "Latitud": ":.4f",
+        "Longitud": ":.4f"
+    },
     color_continuous_scale="RdYlGn_r" if ("Pobreza" in variable or "Desempleo" in variable) else "Viridis",
-    size_max=25,
-    zoom=7.2,
-    height=520,
-    title=f"Distribución espacial – {variable.replace('_', ' ')}"
+    size_max=45,
+    height=550,
+    title=f"Distribución espacial de municipios – {variable.replace('_', ' ')}"
 )
-fig_map.update_layout(margin=dict(r=0, t=40, l=0, b=0))
+
+fig_map.update_traces(marker=dict(line=dict(width=1, color="DarkSlateGrey")))
+fig_map.update_layout(
+    xaxis_title="Longitud",
+    yaxis_title="Latitud",
+    xaxis=dict(scaleanchor="y", scaleratio=1),  # mantiene proporción geográfica
+    margin=dict(r=20, t=50, l=20, b=20)
+)
 st.plotly_chart(fig_map, use_container_width=True)
+
+st.caption("Mapa de dispersión geográfica (Longitud × Latitud). El tamaño del punto representa Valor Agregado o Competitividad.")
 
 # 4. Ranking y dispersión
 st.subheader("4. Ranking Municipal y Relaciones Bivariadas")
@@ -227,13 +250,14 @@ with c2:
     st.dataframe(df_lisa[["Municipio", variable, "Cluster_LISA", "p_LISA"]].sort_values("p_LISA"), height=320, use_container_width=True)
 
 if mostrar_lisa:
-    # Mapa de clústeres LISA con px.scatter_map (compatible)
-    fig_lisa = px.scatter_map(
+    st.markdown("#### Mapa de Clústeres LISA")
+    fig_lisa = px.scatter(
         df_lisa,
-        lat="Latitud",
-        lon="Longitud",
+        x="Longitud",
+        y="Latitud",
         color="Cluster_LISA",
         hover_name="Municipio",
+        hover_data={variable: True, "p_LISA": True},
         color_discrete_map={
             "Alto-Alto (HH)": "#d7191c",
             "Bajo-Bajo (LL)": "#2c7bb6",
@@ -241,11 +265,17 @@ if mostrar_lisa:
             "Bajo-Alto (LH)": "#abd9e9",
             "No significativo": "#cccccc"
         },
-        zoom=7.2,
-        height=480,
-        title="Clústeres LISA (p < 0.05)"
+        size_max=30,
+        height=500,
+        title="Clústeres Espaciales LISA (p < 0.05)"
     )
-    fig_lisa.update_layout(margin=dict(r=0, t=40, l=0, b=0))
+    fig_lisa.update_traces(marker=dict(size=18, line=dict(width=1, color="black")))
+    fig_lisa.update_layout(
+        xaxis_title="Longitud",
+        yaxis_title="Latitud",
+        xaxis=dict(scaleanchor="y", scaleratio=1),
+        margin=dict(r=20, t=50, l=20, b=20)
+    )
     st.plotly_chart(fig_lisa, use_container_width=True)
 
 # 6. Análisis de cruces
@@ -287,4 +317,4 @@ st.dataframe(df.style.format({
     "Latitud": "{:.4f}", "Longitud": "{:.4f}"
 }), use_container_width=True)
 
-st.success("Observatorio listo. Código auditado y corregido.")
+st.success("Observatorio listo. Código auditado y cartografía robusta.")

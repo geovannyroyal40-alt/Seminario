@@ -8,7 +8,7 @@ Aplicación web interactiva desarrollada con **Streamlit** para el análisis de 
 
 - Datos oficiales / aproximaciones documentadas (DANE + CPC)
 - KPIs comparativos Nariño vs Colombia
-- Cartografía interactiva
+- Cartografía interactiva robusta (scatter geográfico lat/lon)
 - Ranking municipal y gráficos de dispersión
 - Econometría espacial (Moran Global + LISA)
 - Estadística descriptiva completa
