@@ -154,32 +154,23 @@ desc = estadisticos_descriptivos(df)
 st.dataframe(desc, use_container_width=True)
 st.caption("CV = Coeficiente de Variación (%). Valores altos indican mayor dispersión territorial.")
 
-# 3. Mapa (CORREGIDO - go.Scattermapbox)
+# 3. Mapa (CORREGIDO DEFINITIVO - usa px.scatter_map que es compatible)
 st.subheader("3. Cartografía Interactiva")
-size_col = "Valor_Agregado" if variable != "Valor_Agregado" else "Indice_Competitividad"
-sizes = (df[size_col] - df[size_col].min()) / (df[size_col].max() - df[size_col].min()) * 30 + 12
 
-fig_map = go.Figure(go.Scattermapbox(
-    lat=df["Latitud"],
-    lon=df["Longitud"],
-    mode="markers",
-    marker=dict(
-        size=sizes,
-        color=df[variable],
-        colorscale="RdYlGn_r" if ("Pobreza" in variable or "Desempleo" in variable) else "Viridis",
-        showscale=True,
-        colorbar=dict(title=variable.replace("_", " ")),
-        opacity=0.85
-    ),
-    text=df["Municipio"],
-    hovertemplate="<b>%{text}</b><br>" + f"{variable.replace('_', ' ')}: %{{marker.color:.2f}}<br>Lat: %{{lat:.4f}}<br>Lon: %{{lon:.4f}}<extra></extra>"
-))
-fig_map.update_layout(
-    mapbox=dict(style="carto-positron", center=dict(lat=1.30, lon=-77.60), zoom=7.2),
-    margin=dict(r=0, t=40, l=0, b=0),
+fig_map = px.scatter_map(
+    df,
+    lat="Latitud",
+    lon="Longitud",
+    color=variable,
+    size="Valor_Agregado" if variable != "Valor_Agregado" else "Indice_Competitividad",
+    hover_name="Municipio",
+    color_continuous_scale="RdYlGn_r" if ("Pobreza" in variable or "Desempleo" in variable) else "Viridis",
+    size_max=25,
+    zoom=7.2,
     height=520,
     title=f"Distribución espacial – {variable.replace('_', ' ')}"
 )
+fig_map.update_layout(margin=dict(r=0, t=40, l=0, b=0))
 st.plotly_chart(fig_map, use_container_width=True)
 
 # 4. Ranking y dispersión
@@ -236,29 +227,25 @@ with c2:
     st.dataframe(df_lisa[["Municipio", variable, "Cluster_LISA", "p_LISA"]].sort_values("p_LISA"), height=320, use_container_width=True)
 
 if mostrar_lisa:
-    color_map = {
-        "Alto-Alto (HH)": "#d7191c",
-        "Bajo-Bajo (LL)": "#2c7bb6",
-        "Alto-Bajo (HL)": "#fdae61",
-        "Bajo-Alto (LH)": "#abd9e9",
-        "No significativo": "#cccccc"
-    }
-    colors = [color_map.get(c, "#cccccc") for c in df_lisa["Cluster_LISA"]]
-
-    fig_lisa = go.Figure(go.Scattermapbox(
-        lat=df_lisa["Latitud"],
-        lon=df_lisa["Longitud"],
-        mode="markers",
-        marker=dict(size=18, color=colors, opacity=0.9),
-        text=df_lisa["Municipio"] + "<br>Cluster: " + df_lisa["Cluster_LISA"],
-        hoverinfo="text"
-    ))
-    fig_lisa.update_layout(
-        mapbox=dict(style="carto-positron", center=dict(lat=1.30, lon=-77.60), zoom=7.2),
-        margin=dict(r=0, t=40, l=0, b=0),
+    # Mapa de clústeres LISA con px.scatter_map (compatible)
+    fig_lisa = px.scatter_map(
+        df_lisa,
+        lat="Latitud",
+        lon="Longitud",
+        color="Cluster_LISA",
+        hover_name="Municipio",
+        color_discrete_map={
+            "Alto-Alto (HH)": "#d7191c",
+            "Bajo-Bajo (LL)": "#2c7bb6",
+            "Alto-Bajo (HL)": "#fdae61",
+            "Bajo-Alto (LH)": "#abd9e9",
+            "No significativo": "#cccccc"
+        },
+        zoom=7.2,
         height=480,
         title="Clústeres LISA (p < 0.05)"
     )
+    fig_lisa.update_layout(margin=dict(r=0, t=40, l=0, b=0))
     st.plotly_chart(fig_lisa, use_container_width=True)
 
 # 6. Análisis de cruces
